@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>noa • todo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #000;
+      color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      background: #000;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(0,0,0,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 0.5px solid #262626;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+
+    .header-count {
+      font-size: 13px;
+      color: #a8a8a8;
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 16px;
+    }
+
+    .header-btn {
+      background: none;
+      border: none;
+      color: #f5f5f5;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px;
+      transition: opacity 0.2s;
+    }
+
+    .header-btn:active { opacity: 0.5; }
+
+    .stories {
+      padding: 12px 16px;
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      border-bottom: 0.5px solid #262626;
+    }
+
+    .stories::-webkit-scrollbar { display: none; }
+
+    .story {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .story-ring {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      padding: 2.5px;
+      background: linear-gradient(45deg, #f9ce34, #ee2a7b, #6228d7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .story-ring.done { background: #363636; }
+
+    .story-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #1a1a1a;
+      border: 2px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .story-label {
+      font-size: 11px;
+      color: #a8a8a8;
+      max-width: 66px;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .story-label.done { text-decoration: line-through; color: #555; }
+
+    .input-bar {
+      position: sticky;
+      top: 52px;
+      z-index: 99;
+      background: rgba(0,0,0,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 10px 16px;
+      display: flex;
+      gap: 10px;
+      border-bottom: 0.5px solid #262626;
+    }
+
+    .input-bar input {
+      flex: 1;
+      background: #1a1a1a;
+      border: 0.5px solid #363636;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #f5f5f5;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-bar input:focus { border-color: #555; }
+    .input-bar input::placeholder { color: #777; }
+
+    .input-bar button {
+      background: linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7);
+      border: none;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .input-bar button:active { opacity: 0.7; }
+    .input-bar button:disabled { opacity: 0.4; }
+
+    .feed {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .post {
+      border-bottom: 0.5px solid #1a1a1a;
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+    }
+
+    .post-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .post-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .post-avatar.done { background: #363636; }
+
+    .post-username {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .post-time {
+      font-size: 12px;
+      color: #a8a8a8;
+    }
+
+    .post-more {
+      background: none;
+      border: none;
+      color: #f5f5f5;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .post-content {
+      padding: 0 16px 12px;
+      min-height: 200px;
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .post-content::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(249,206,52,0.08), rgba(238,42,123,0.08), rgba(98,40,215,0.08));
+    }
+
+    .todo-gradient {
+      position: relative;
+      z-index: 1;
+      font-size: 28px;
+      font-weight: 300;
+      text-align: center;
+      padding: 20px;
+      line-height: 1.3;
+      color: #f5f5f5;
+    }
+
+    .todo-gradient.done {
+      text-decoration: line-through;
+      color: #555;
+    }
+
+    .post-actions {
+      padding: 8px 16px 0;
+      display: flex;
+      gap: 14px;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      color: #f5f5f5;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px;
+      transition: transform 0.2s;
+    }
+
+    .action-btn:active { transform: scale(1.2); }
+    .action-btn.liked { color: #ed4956; }
+
+    .post-likes {
+      padding: 6px 16px 0;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .post-caption {
+      padding: 6px 16px 12px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .post-caption .username {
+      font-weight: 600;
+      margin-right: 6px;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    .empty-text {
+      color: #a8a8a8;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .empty-sub {
+      color: #555;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .filter-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid #363636;
+      background: #0a0a0a;
+      color: #a8a8a8;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .filter-badge.active {
+      background: #1a1a1a;
+      border-color: #555;
+      color: #f5f5f5;
+    }
+
+    .filters {
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      border-bottom: 0.5px solid #262626;
+    }
+
+    .filters::-webkit-scrollbar { display: none; }
+
+    .delete-toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #262626;
+      color: #f5f5f5;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 200;
+      opacity: 0;
+      animation: toastIn 0.3s ease forwards, toastOut 0.3s ease 2s forwards;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateX(-50%) translateY(0); }
+      to { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    }
+
+    .post-deleting {
+      animation: slideOut 0.3s ease forwards;
+    }
+
+    @keyframes slideOut {
+      to { opacity: 0; transform: translateX(100%); max-height: 0; overflow: hidden; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-left">
+        <span class="logo">noa</span>
+        <span class="header-count" id="count"></span>
+      </div>
+    </header>
+
+    <div class="filters" id="filters">
+      <span class="filter-badge active" data-filter="all">All</span>
+      <span class="filter-badge" data-filter="pending">Pending</span>
+      <span class="filter-badge" data-filter="done">Done</span>
+    </div>
+
+    <div class="stories" id="stories"></div>
+
+    <div class="input-bar">
+      <input type="text" id="todoInput" placeholder="What needs to get done?" maxlength="120" autocomplete="off">
+      <button id="addBtn">Post</button>
+    </div>
+
+    <div class="feed" id="feed">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text">No todos yet</div>
+        <div class="empty-sub">Add one to get started</div>
+      </div>
+    </div>
+
+    <div class="delete-toast" id="toast" style="display:none"></div>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    const input = $('#todoInput');
+    const addBtn = $('#addBtn');
+    const feed = $('#feed');
+    const stories = $('#stories');
+    const count = $('#count');
+    const toast = $('#toast');
+    const filters = $('#filters');
+
+    let todos = [];
+    let currentFilter = 'all';
+
+    async function fetchTodos() {
+      const res = await fetch('/api/todos');
+      todos = await res.json();
+      render();
+    }
+
+    function getFilteredTodos() {
+      if (currentFilter === 'pending') return todos.filter(t => !t.completed);
+      if (currentFilter === 'done') return todos.filter(t => t.completed);
+      return todos;
+    }
+
+    function render() {
+      const filtered = getFilteredTodos();
+      count.textContent = `${filtered.length} post${filtered.length !== 1 ? 's' : ''}`;
+
+      if (filtered.length === 0) {
+        feed.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">${currentFilter === 'done' ? '✅' : currentFilter === 'pending' ? '⏳' : '📋'}</div>
+            <div class="empty-text">${currentFilter === 'done' ? 'Nothing completed yet' : currentFilter === 'pending' ? 'All caught up!' : 'No todos yet'}</div>
+            <div class="empty-sub">${currentFilter === 'all' ? 'Add one to get started' : ''}</div>
+          </div>`;
+      } else {
+        feed.innerHTML = filtered.map(t => `
+          <div class="post" data-id="${t.id}">
+            <div class="post-header">
+              <div class="post-user">
+                <div class="post-avatar ${t.completed ? 'done' : ''}">${t.completed ? '✓' : '○'}</div>
+                <div>
+                  <div class="post-username">todo #${t.id}</div>
+                  <div class="post-time">${timeAgo(t.createdAt)}</div>
+                </div>
+              </div>
+              <button class="post-more" onclick="deleteTodo(${t.id}, this)" title="Delete">⋯</button>
+            </div>
+            <div class="post-content">
+              <div class="todo-gradient ${t.completed ? 'done' : ''}">${escapeHtml(t.text)}</div>
+            </div>
+            <div class="post-actions">
+              <button class="action-btn ${t.completed ? 'liked' : ''}" onclick="toggleTodo(${t.id})">
+                ${t.completed ? '❤️' : '🤍'}
+              </button>
+              <button class="action-btn" onclick="deleteTodo(${t.id}, this)" style="margin-left:auto">🗑️</button>
+            </div>
+            <div class="post-likes">${t.completed ? 'Done! 🎉' : 'Tap the heart to mark done'}</div>
+            <div class="post-caption">
+              <span class="username">todo_${t.id}</span>${escapeHtml(t.text)}
+            </div>
+          </div>`).join('');
+      }
+
+      updateStories();
+    }
+
+    function updateStories() {
+      const items = todos.slice(0, 12);
+      if (items.length === 0) {
+        stories.innerHTML = '<div style="color:#555;font-size:13px;padding:8px 0">No stories yet</div>';
+        return;
+      }
+      stories.innerHTML = items.map(t => `
+        <div class="story" onclick="toggleTodo(${t.id})">
+          <div class="story-ring ${t.completed ? 'done' : ''}">
+            <div class="story-avatar">${t.completed ? '✓' : t.text.charAt(0).toUpperCase()}</div>
+          </div>
+          <span class="story-label ${t.completed ? 'done' : ''}">${t.text.substring(0, 10)}${t.text.length > 10 ? '...' : ''}</span>
+        </div>`).join('');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function timeAgo(dateStr) {
+      const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+      if (seconds < 60) return 'just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      return `${days}d ago`;
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      toast.style.animation = 'none';
+      toast.offsetHeight;
+      toast.style.animation = 'toastIn 0.3s ease forwards, toastOut 0.3s ease 2s forwards';
+      setTimeout(() => { toast.style.display = 'none'; }, 2300);
+    }
+
+    async function addTodo() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      addBtn.disabled = true;
+      const res = await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      if (res.ok) {
+        input.value = '';
+        input.focus();
+        await fetchTodos();
+      }
+      addBtn.disabled = false;
+    }
+
+    async function toggleTodo(id) {
+      await fetch(`/api/todos/${id}`, { method: 'PUT' });
+      await fetchTodos();
+    }
+
+    async function deleteTodo(id, btn) {
+      const post = btn.closest('.post');
+      if (post) post.classList.add('post-deleting');
+
+      await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+      await fetchTodos();
+      showToast('Todo deleted');
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addTodo();
+    });
+
+    addBtn.addEventListener('click', addTodo);
+
+    filters.addEventListener('click', (e) => {
+      if (e.target.classList.contains('filter-badge')) {
+        $$('.filter-badge').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentFilter = e.target.dataset.filter;
+        render();
+      }
+    });
+
+    fetchTodos();
+  </script>
+</body>
+</html>

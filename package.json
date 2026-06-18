@@ -1,7 +1,7 @@
 {
   "name": "noa-todo",
-  "version": "1.0.0",
-  "description": "Instagram-style todo app",
+  "version": "2.0.0",
+  "description": "A clicker incremental bubble-pop todo app",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

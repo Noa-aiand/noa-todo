@@ -3,592 +3,998 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>noa • todo</title>
+  <title>PopTodo • Clicker</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+    :root {
+      --bg: #0d0d0d;
+      --surface: #1a1a1a;
+      --surface-hover: #242424;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --text2: #a0a0a0;
+      --accent: #ff6b9d;
+      --accent2: #c850c0;
+      --accent3: #4158d0;
+      --gold: #ffd700;
+      --green: #50fa7b;
+      --danger: #ff5555;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #000;
-      color: #f5f5f5;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
       display: flex;
       justify-content: center;
-      min-height: 100vh;
-      -webkit-tap-highlight-color: transparent;
     }
-
     .app {
       width: 100%;
-      max-width: 430px;
-      background: #000;
-      min-height: 100vh;
+      max-width: 480px;
+      height: 100vh;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      background: radial-gradient(ellipse at 50% 0%, #1a1025 0%, var(--bg) 60%);
     }
 
+    /* HEADER */
     .header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(0,0,0,0.92);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      padding: 12px 16px;
+      padding: 10px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 0.5px solid #262626;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13,13,13,0.85);
+      backdrop-filter: blur(12px);
+      z-index: 20;
+      flex-shrink: 0;
     }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
     .logo {
-      font-size: 22px;
-      font-weight: 700;
-      background: linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7);
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -0.5px;
+      letter-spacing: -1px;
     }
-
-    .header-count {
-      font-size: 13px;
-      color: #a8a8a8;
-      font-weight: 500;
-    }
-
-    .header-actions {
+    .header-stats {
       display: flex;
-      gap: 16px;
+      gap: 14px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .stat-chip {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text2);
+      background: var(--surface);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+    .stat-chip .val { color: var(--gold); }
+
+    /* GAME AREA */
+    .game-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    .game-area.empty::after {
+      content: 'Tap + to add bubbles';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--text2);
+      font-size: 15px;
+      opacity: 0.5;
+      pointer-events: none;
     }
 
-    .header-btn {
-      background: none;
-      border: none;
-      color: #f5f5f5;
-      font-size: 20px;
+    /* BUBBLES */
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
       cursor: pointer;
-      padding: 4px;
-      transition: opacity 0.2s;
+      transition: transform 0.05s;
+      box-shadow:
+        inset -4px -4px 8px rgba(0,0,0,0.3),
+        inset 4px 4px 8px rgba(255,255,255,0.15),
+        0 4px 12px rgba(0,0,0,0.4);
+      animation: float var(--float-dur, 6s) ease-in-out infinite;
+      padding: 8px;
+      overflow: hidden;
+      word-break: break-word;
+      line-height: 1.2;
+      z-index: 2;
+      touch-action: manipulation;
+    }
+    .bubble::before {
+      content: '';
+      position: absolute;
+      top: 12%;
+      left: 18%;
+      width: 28%;
+      height: 18%;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      transform: rotate(-25deg);
+    }
+    .bubble:active { transform: scale(0.9); }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      25% { transform: translateY(-12px) translateX(6px); }
+      50% { transform: translateY(-4px) translateX(-8px); }
+      75% { transform: translateY(-14px) translateX(4px); }
+    }
+    .bubble.popping {
+      animation: popAnim 0.3s ease-out forwards !important;
+      pointer-events: none;
+    }
+    @keyframes popAnim {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.8; }
+      100% { transform: scale(0); opacity: 0; }
     }
 
-    .header-btn:active { opacity: 0.5; }
-
-    .stories {
-      padding: 12px 16px;
-      display: flex;
-      gap: 16px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      border-bottom: 0.5px solid #262626;
+    /* PARTICLES */
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 10;
     }
 
-    .stories::-webkit-scrollbar { display: none; }
+    /* FLOATING SCORE */
+    .float-score {
+      position: absolute;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--gold);
+      pointer-events: none;
+      z-index: 15;
+      animation: floatUp 0.9s ease-out forwards;
+      text-shadow: 0 0 8px rgba(255,215,0,0.5);
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
+    }
 
-    .story {
+    /* COMBO BAR */
+    .combo-wrap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 12;
+      padding: 8px 14px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
-      flex-shrink: 0;
-      cursor: pointer;
+      gap: 4px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
     }
-
-    .story-ring {
-      width: 66px;
-      height: 66px;
-      border-radius: 50%;
-      padding: 2.5px;
-      background: linear-gradient(45deg, #f9ce34, #ee2a7b, #6228d7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .combo-wrap.active { opacity: 1; }
+    .combo-text {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 12px rgba(255,215,0,0.4);
+      letter-spacing: 1px;
     }
-
-    .story-ring.done { background: #363636; }
-
-    .story-avatar {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: #1a1a1a;
-      border: 2px solid #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-    }
-
-    .story-label {
-      font-size: 11px;
-      color: #a8a8a8;
-      max-width: 66px;
-      text-align: center;
+    .combo-bar-track {
+      width: 120px;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
       overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    }
+    .combo-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--gold));
+      border-radius: 4px;
+      transition: width 0.1s linear;
     }
 
-    .story-label.done { text-decoration: line-through; color: #555; }
-
+    /* INPUT BAR */
     .input-bar {
-      position: sticky;
-      top: 52px;
-      z-index: 99;
-      background: rgba(0,0,0,0.92);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      padding: 10px 16px;
+      padding: 8px 12px;
       display: flex;
-      gap: 10px;
-      border-bottom: 0.5px solid #262626;
+      gap: 8px;
+      background: rgba(13,13,13,0.9);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      z-index: 20;
+      flex-shrink: 0;
     }
-
     .input-bar input {
       flex: 1;
-      background: #1a1a1a;
-      border: 0.5px solid #363636;
-      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
       padding: 10px 14px;
-      color: #f5f5f5;
+      color: var(--text);
       font-size: 14px;
       outline: none;
-      transition: border-color 0.2s;
     }
-
-    .input-bar input:focus { border-color: #555; }
-    .input-bar input::placeholder { color: #777; }
-
-    .input-bar button {
-      background: linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7);
+    .input-bar input:focus { border-color: #444; }
+    .input-bar input::placeholder { color: #555; }
+    .btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .btn:active { transform: scale(0.92); background: var(--surface-hover); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
       border: none;
       color: #fff;
       font-weight: 700;
       font-size: 14px;
-      padding: 10px 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: opacity 0.2s;
-      white-space: nowrap;
+      padding: 10px 16px;
+    }
+    .btn-primary:disabled { opacity: 0.4; }
+    .btn-gold {
+      background: linear-gradient(135deg, #b8860b, var(--gold));
+      border: none;
+      color: #000;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 10px 14px;
+      min-width: 60px;
     }
 
-    .input-bar button:active { opacity: 0.7; }
-    .input-bar button:disabled { opacity: 0.4; }
-
-    .feed {
+    /* SHOP PANEL */
+    .shop-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 50;
+    }
+    .shop-overlay.open { opacity: 1; pointer-events: auto; }
+    .shop-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      border-radius: 20px 20px 0 0;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+      z-index: 51;
+      max-height: 70vh;
       display: flex;
       flex-direction: column;
     }
-
-    .post {
-      border-bottom: 0.5px solid #1a1a1a;
-    }
-
-    .post-header {
+    .shop-panel.open { transform: translateY(0); }
+    .shop-header {
+      padding: 16px 18px 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
+    .shop-title { font-size: 18px; font-weight: 800; }
+    .shop-x { background: none; border: none; color: var(--text2); font-size: 22px; cursor: pointer; padding: 4px; }
+    .shop-list {
+      overflow-y: auto;
+      padding: 8px 14px 20px;
+    }
+    .shop-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--surface);
+      border-radius: 14px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+    }
+    .shop-icon { font-size: 28px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.04); border-radius: 12px; flex-shrink: 0; }
+    .shop-info { flex: 1; min-width: 0; }
+    .shop-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .shop-desc { font-size: 12px; color: var(--text2); }
+    .shop-level { font-size: 11px; color: var(--accent); margin-top: 4px; font-weight: 600; }
+    .shop-action {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .shop-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      color: #fff;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .shop-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+    .shop-cost { font-size: 11px; color: var(--gold); font-weight: 600; }
 
-    .post-user {
+    /* LEVEL UP OVERLAY */
+    .level-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .level-overlay.show { opacity: 1; }
+    .level-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px 36px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      transform: scale(0.8);
+      transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    .level-overlay.show .level-card { transform: scale(1); }
+    .level-emoji { font-size: 56px; margin-bottom: 12px; }
+    .level-title { font-size: 26px; font-weight: 900; margin-bottom: 4px; background: linear-gradient(135deg, var(--accent), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .level-sub { font-size: 14px; color: var(--text2); }
+
+    /* ACHIEVEMENT TOAST */
+    .toast {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 18px;
       display: flex;
       align-items: center;
       gap: 10px;
-    }
-
-    .post-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-    }
-
-    .post-avatar.done { background: #363636; }
-
-    .post-username {
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .post-time {
-      font-size: 12px;
-      color: #a8a8a8;
-    }
-
-    .post-more {
-      background: none;
-      border: none;
-      color: #f5f5f5;
-      font-size: 18px;
-      cursor: pointer;
-      padding: 4px;
-    }
-
-    .post-content {
-      padding: 0 16px 12px;
-      min-height: 200px;
-      background: #0a0a0a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .post-content::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(249,206,52,0.08), rgba(238,42,123,0.08), rgba(98,40,215,0.08));
-    }
-
-    .todo-gradient {
-      position: relative;
-      z-index: 1;
-      font-size: 28px;
-      font-weight: 300;
-      text-align: center;
-      padding: 20px;
-      line-height: 1.3;
-      color: #f5f5f5;
-    }
-
-    .todo-gradient.done {
-      text-decoration: line-through;
-      color: #555;
-    }
-
-    .post-actions {
-      padding: 8px 16px 0;
-      display: flex;
-      gap: 14px;
-    }
-
-    .action-btn {
-      background: none;
-      border: none;
-      color: #f5f5f5;
-      font-size: 22px;
-      cursor: pointer;
-      padding: 4px;
-      transition: transform 0.2s;
-    }
-
-    .action-btn:active { transform: scale(1.2); }
-    .action-btn.liked { color: #ed4956; }
-
-    .post-likes {
-      padding: 6px 16px 0;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .post-caption {
-      padding: 6px 16px 12px;
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .post-caption .username {
-      font-weight: 600;
-      margin-right: 6px;
-    }
-
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 80px 20px;
-      text-align: center;
-    }
-
-    .empty-icon {
-      font-size: 64px;
-      margin-bottom: 16px;
-      opacity: 0.3;
-    }
-
-    .empty-text {
-      color: #a8a8a8;
-      font-size: 15px;
-      line-height: 1.5;
-    }
-
-    .empty-sub {
-      color: #555;
-      font-size: 13px;
-      margin-top: 4px;
-    }
-
-    .filter-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      border: 0.5px solid #363636;
-      background: #0a0a0a;
-      color: #a8a8a8;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-
-    .filter-badge.active {
-      background: #1a1a1a;
-      border-color: #555;
-      color: #f5f5f5;
-    }
-
-    .filters {
-      padding: 10px 16px;
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      border-bottom: 0.5px solid #262626;
-    }
-
-    .filters::-webkit-scrollbar { display: none; }
-
-    .delete-toast {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #262626;
-      color: #f5f5f5;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 500;
-      z-index: 200;
+      z-index: 90;
       opacity: 0;
-      animation: toastIn 0.3s ease forwards, toastOut 0.3s ease 2s forwards;
+      transition: all 0.4s;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      pointer-events: none;
+      font-size: 14px;
+      font-weight: 600;
     }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast-emoji { font-size: 22px; }
 
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
-    }
-
-    @keyframes toastOut {
-      from { opacity: 1; transform: translateX(-50%) translateY(0); }
-      to { opacity: 0; transform: translateX(-50%) translateY(20px); }
-    }
-
-    .post-deleting {
-      animation: slideOut 0.3s ease forwards;
-    }
-
-    @keyframes slideOut {
-      to { opacity: 0; transform: translateX(100%); max-height: 0; overflow: hidden; }
+    /* MUTE INDICATOR */
+    .mute-hint {
+      position: absolute;
+      bottom: 4px;
+      right: 8px;
+      font-size: 10px;
+      color: #333;
+      z-index: 5;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
   <div class="app">
     <header class="header">
-      <div class="header-left">
-        <span class="logo">noa</span>
-        <span class="header-count" id="count"></span>
+      <div class="logo">PopTodo</div>
+      <div class="header-stats">
+        <div class="stat-chip">🪙 <span class="val" id="scoreDisplay">0</span></div>
+        <div class="stat-chip">⭐ <span class="val" id="levelDisplay">1</span></div>
       </div>
     </header>
 
-    <div class="filters" id="filters">
-      <span class="filter-badge active" data-filter="all">All</span>
-      <span class="filter-badge" data-filter="pending">Pending</span>
-      <span class="filter-badge" data-filter="done">Done</span>
-    </div>
+    <div class="game-area" id="gameArea"></div>
 
-    <div class="stories" id="stories"></div>
+    <div class="combo-wrap" id="comboWrap">
+      <div class="combo-text" id="comboText">0x Combo!</div>
+      <div class="combo-bar-track"><div class="combo-bar-fill" id="comboBar"></div></div>
+    </div>
 
     <div class="input-bar">
-      <input type="text" id="todoInput" placeholder="What needs to get done?" maxlength="120" autocomplete="off">
-      <button id="addBtn">Post</button>
+      <input type="text" id="todoInput" placeholder="Spawn a bubble..." maxlength="80" autocomplete="off">
+      <button class="btn btn-primary" id="addBtn">Add</button>
+      <button class="btn btn-gold" id="shopBtn">🛒</button>
+      <button class="btn" id="muteBtn">🔊</button>
     </div>
-
-    <div class="feed" id="feed">
-      <div class="empty-state">
-        <div class="empty-icon">📋</div>
-        <div class="empty-text">No todos yet</div>
-        <div class="empty-sub">Add one to get started</div>
-      </div>
-    </div>
-
-    <div class="delete-toast" id="toast" style="display:none"></div>
   </div>
 
+  <div class="shop-overlay" id="shopOverlay"></div>
+  <div class="shop-panel" id="shopPanel">
+    <div class="shop-header">
+      <div class="shop-title">🛒 Upgrade Shop</div>
+      <button class="shop-x" id="shopClose">×</button>
+    </div>
+    <div class="shop-list" id="shopList"></div>
+  </div>
+
+  <div class="level-overlay" id="levelOverlay">
+    <div class="level-card">
+      <div class="level-emoji">🎉</div>
+      <div class="level-title" id="levelTitle">Level Up!</div>
+      <div class="level-sub" id="levelSub">You reached level 2</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <span class="toast-emoji" id="toastEmoji">🏆</span>
+    <span id="toastText">Achievement unlocked!</span>
+  </div>
+
+  <div class="mute-hint">tap bubbles · pop sound</div>
+
   <script>
-    const $ = (sel) => document.querySelector(sel);
-    const $$ = (sel) => document.querySelectorAll(sel);
+    /* ========== AUDIO ENGINE ========== */
+    let audioCtx = null;
+    let muted = false;
 
-    const input = $('#todoInput');
-    const addBtn = $('#addBtn');
-    const feed = $('#feed');
-    const stories = $('#stories');
-    const count = $('#count');
-    const toast = $('#toast');
-    const filters = $('#filters');
-
-    let todos = [];
-    let currentFilter = 'all';
-
-    async function fetchTodos() {
-      const res = await fetch('/api/todos');
-      todos = await res.json();
-      render();
+    function ensureAudio() {
+      if (muted || audioCtx) return;
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) { console.warn('Web Audio not supported'); }
     }
 
-    function getFilteredTodos() {
-      if (currentFilter === 'pending') return todos.filter(t => !t.completed);
-      if (currentFilter === 'done') return todos.filter(t => t.completed);
-      return todos;
+    function playPop(frequency = 800, duration = 0.12) {
+      if (muted || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(frequency, now);
+      osc.frequency.exponentialRampToValueAtTime(frequency * 0.3, now + duration);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + duration + 0.02);
+
+      // subtle noise burst
+      const bufferSize = audioCtx.sampleRate * 0.04;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const ng = audioCtx.createGain();
+      ng.gain.setValueAtTime(0.04, now);
+      ng.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+      noise.connect(ng);
+      ng.connect(audioCtx.destination);
+      noise.start(now);
     }
 
-    function render() {
-      const filtered = getFilteredTodos();
-      count.textContent = `${filtered.length} post${filtered.length !== 1 ? 's' : ''}`;
-
-      if (filtered.length === 0) {
-        feed.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">${currentFilter === 'done' ? '✅' : currentFilter === 'pending' ? '⏳' : '📋'}</div>
-            <div class="empty-text">${currentFilter === 'done' ? 'Nothing completed yet' : currentFilter === 'pending' ? 'All caught up!' : 'No todos yet'}</div>
-            <div class="empty-sub">${currentFilter === 'all' ? 'Add one to get started' : ''}</div>
-          </div>`;
-      } else {
-        feed.innerHTML = filtered.map(t => `
-          <div class="post" data-id="${t.id}">
-            <div class="post-header">
-              <div class="post-user">
-                <div class="post-avatar ${t.completed ? 'done' : ''}">${t.completed ? '✓' : '○'}</div>
-                <div>
-                  <div class="post-username">todo #${t.id}</div>
-                  <div class="post-time">${timeAgo(t.createdAt)}</div>
-                </div>
-              </div>
-              <button class="post-more" onclick="deleteTodo(${t.id}, this)" title="Delete">⋯</button>
-            </div>
-            <div class="post-content">
-              <div class="todo-gradient ${t.completed ? 'done' : ''}">${escapeHtml(t.text)}</div>
-            </div>
-            <div class="post-actions">
-              <button class="action-btn ${t.completed ? 'liked' : ''}" onclick="toggleTodo(${t.id})">
-                ${t.completed ? '❤️' : '🤍'}
-              </button>
-              <button class="action-btn" onclick="deleteTodo(${t.id}, this)" style="margin-left:auto">🗑️</button>
-            </div>
-            <div class="post-likes">${t.completed ? 'Done! 🎉' : 'Tap the heart to mark done'}</div>
-            <div class="post-caption">
-              <span class="username">todo_${t.id}</span>${escapeHtml(t.text)}
-            </div>
-          </div>`).join('');
-      }
-
-      updateStories();
-    }
-
-    function updateStories() {
-      const items = todos.slice(0, 12);
-      if (items.length === 0) {
-        stories.innerHTML = '<div style="color:#555;font-size:13px;padding:8px 0">No stories yet</div>';
-        return;
-      }
-      stories.innerHTML = items.map(t => `
-        <div class="story" onclick="toggleTodo(${t.id})">
-          <div class="story-ring ${t.completed ? 'done' : ''}">
-            <div class="story-avatar">${t.completed ? '✓' : t.text.charAt(0).toUpperCase()}</div>
-          </div>
-          <span class="story-label ${t.completed ? 'done' : ''}">${t.text.substring(0, 10)}${t.text.length > 10 ? '...' : ''}</span>
-        </div>`).join('');
-    }
-
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-
-    function timeAgo(dateStr) {
-      const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-      if (seconds < 60) return 'just now';
-      const minutes = Math.floor(seconds / 60);
-      if (minutes < 60) return `${minutes}m ago`;
-      const hours = Math.floor(minutes / 60);
-      if (hours < 24) return `${hours}h ago`;
-      const days = Math.floor(hours / 24);
-      return `${days}d ago`;
-    }
-
-    function showToast(msg) {
-      toast.textContent = msg;
-      toast.style.display = 'block';
-      toast.style.animation = 'none';
-      toast.offsetHeight;
-      toast.style.animation = 'toastIn 0.3s ease forwards, toastOut 0.3s ease 2s forwards';
-      setTimeout(() => { toast.style.display = 'none'; }, 2300);
-    }
-
-    async function addTodo() {
-      const text = input.value.trim();
-      if (!text) return;
-
-      addBtn.disabled = true;
-      const res = await fetch('/api/todos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+    function playChime() {
+      if (muted || !audioCtx) return;
+      const notes = [523, 659, 784, 1047];
+      notes.forEach((f, i) => {
+        const now = audioCtx.currentTime + i * 0.08;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.45);
       });
-      if (res.ok) {
-        input.value = '';
-        input.focus();
-        await fetchTodos();
+    }
+
+    function playError() {
+      if (muted || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, now);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    }
+
+    /* ========== STATE ========== */
+    const state = {
+      score: 0,
+      level: 1,
+      totalPops: 0,
+      combo: 0,
+      comboTimer: 0,
+      comboMaxTime: 2000,
+      highestCombo: 0,
+      bubbles: [],
+      todoCounter: 1,
+      upgrades: {
+        popPower: { level: 0, baseCost: 50, name: 'Pop Power', desc: 'More points per pop', icon: '💪' },
+        autoPop: { level: 0, baseCost: 150, name: 'Auto Popper', desc: 'Auto-pops a bubble/sec', icon: '⚡' },
+        spawnRate: { level: 0, baseCost: 200, name: 'Bubble Stream', desc: 'Auto-spawns bubbles faster', icon: '🌊' },
+        comboTime: { level: 0, baseCost: 300, name: 'Combo Master', desc: 'Combo lasts longer', icon: '🔥' },
+        bigBubbles: { level: 0, baseCost: 500, name: 'Big Bubbles', desc: 'Bigger bubbles = more points', icon: '🎈' },
+        critChance: { level: 0, baseCost: 800, name: 'Crit Popper', desc: 'Chance for critical pops', icon: '🎯' },
+      },
+      achievements: new Set(),
+      startTime: Date.now(),
+    };
+
+    const costs = {};
+    function recalcCosts() {
+      for (const k in state.upgrades) {
+        const u = state.upgrades[k];
+        costs[k] = Math.floor(u.baseCost * Math.pow(1.5, u.level));
       }
-      addBtn.disabled = false;
+    }
+    recalcCosts();
+
+    /* ========== DOM ========== */
+    const gameArea = document.getElementById('gameArea');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const levelDisplay = document.getElementById('levelDisplay');
+    const comboWrap = document.getElementById('comboWrap');
+    const comboText = document.getElementById('comboText');
+    const comboBar = document.getElementById('comboBar');
+    const todoInput = document.getElementById('todoInput');
+    const addBtn = document.getElementById('addBtn');
+    const shopBtn = document.getElementById('shopBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const shopOverlay = document.getElementById('shopOverlay');
+    const shopPanel = document.getElementById('shopPanel');
+    const shopClose = document.getElementById('shopClose');
+    const shopList = document.getElementById('shopList');
+    const levelOverlay = document.getElementById('levelOverlay');
+    const levelTitle = document.getElementById('levelTitle');
+    const levelSub = document.getElementById('levelSub');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
+    const toastEmoji = document.getElementById('toastEmoji');
+
+    /* ========== BACKEND SYNC (optional) ========== */
+    async function pushTodo(text, id, completed) {
+      try {
+        await fetch('/api/todos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+      } catch (e) { /* offline is fine */ }
+    }
+    async function completeTodo(id) {
+      try { await fetch(`/api/todos/${id}`, { method: 'PUT' }); } catch (e) {}
+    }
+    async function deleteTodoBackend(id) {
+      try { await fetch(`/api/todos/${id}`, { method: 'DELETE' }); } catch (e) {}
     }
 
-    async function toggleTodo(id) {
-      await fetch(`/api/todos/${id}`, { method: 'PUT' });
-      await fetchTodos();
+    /* ========== BUBBLES ========== */
+    function randomColor() {
+      const hues = [320, 260, 200, 170, 30, 10];
+      const h = hues[Math.floor(Math.random() * hues.length)];
+      return `hsl(${h}, 75%, 60%)`;
+    }
+    function randomPos() {
+      const w = gameArea.clientWidth || 400;
+      const h = gameArea.clientHeight || 500;
+      const pad = 30;
+      return {
+        x: pad + Math.random() * (w - pad * 2),
+        y: pad + Math.random() * (h - pad * 2),
+      };
     }
 
-    async function deleteTodo(id, btn) {
-      const post = btn.closest('.post');
-      if (post) post.classList.add('post-deleting');
+    function spawnBubble(text = '') {
+      ensureAudio();
+      const id = state.todoCounter++;
+      const txt = text.trim() || `task #${id}`;
+      const sizeBase = 70 + state.upgrades.bigBubbles.level * 8;
+      const size = sizeBase + Math.random() * 30;
+      const pos = randomPos();
+      const el = document.createElement('div');
+      el.className = 'bubble';
+      el.style.cssText = `
+        left: ${pos.x}px; top: ${pos.y}px;
+        width: ${size}px; height: ${size}px;
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.35), ${randomColor()});
+        --float-dur: ${4 + Math.random() * 4}s;
+      `;
+      el.textContent = txt;
+      el.dataset.id = id;
+      el.dataset.size = size;
 
-      await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-      await fetchTodos();
-      showToast('Todo deleted');
+      // nudge away from edges gently
+      const w = gameArea.clientWidth || 400;
+      const h = gameArea.clientHeight || 500;
+      if (pos.x + size > w) el.style.left = (w - size - 10) + 'px';
+      if (pos.y + size > h) el.style.top = (h - size - 10) + 'px';
+
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popBubble(id);
+      });
+      gameArea.appendChild(el);
+      state.bubbles.push({ id, text: txt, el, size });
+      checkEmptyState();
+      if (text) pushTodo(text, id, false);
+
+      // gentle drift toward center over time
+      driftBubble(el);
     }
 
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') addTodo();
+    function driftBubble(el) {
+      // CSS animation handles float; this is just to keep them on screen
+      const interval = setInterval(() => {
+        if (!el.parentNode) { clearInterval(interval); return; }
+        const rect = el.getBoundingClientRect();
+        const area = gameArea.getBoundingClientRect();
+        if (rect.right > area.right + 20 || rect.bottom > area.bottom + 20 || rect.left < area.left - 20 || rect.top < area.top - 20) {
+          el.style.transition = 'left 1.5s ease, top 1.5s ease';
+          const newX = Math.max(10, Math.min(area.width - rect.width - 10, parseFloat(el.style.left || 0) + (Math.random() - 0.5) * 60));
+          const newY = Math.max(10, Math.min(area.height - rect.height - 10, parseFloat(el.style.top || 0) + (Math.random() - 0.5) * 60));
+          el.style.left = newX + 'px';
+          el.style.top = newY + 'px';
+          setTimeout(() => { el.style.transition = ''; }, 1500);
+        }
+      }, 3000);
+    }
+
+    function popBubble(id) {
+      ensureAudio();
+      const idx = state.bubbles.findIndex(b => b.id === id);
+      if (idx === -1) return;
+      const bubble = state.bubbles[idx];
+      const el = bubble.el;
+      const size = parseFloat(el.dataset.size || bubble.size || 80);
+
+      // combo
+      state.combo = state.combo ? state.combo + 1 : 1;
+      state.comboTimer = state.comboMaxTime + state.upgrades.comboTime.level * 400;
+      if (state.combo > state.highestCombo) state.highestCombo = state.combo;
+      updateComboUI();
+
+      // score calculation
+      const basePoints = 10 + state.upgrades.popPower.level * 5;
+      const sizeBonus = Math.floor(size / 40);
+      let points = (basePoints + sizeBonus) * Math.max(1, state.combo);
+      const critRoll = Math.random();
+      const critChance = Math.min(0.5, state.upgrades.critChance.level * 0.08);
+      let isCrit = false;
+      if (critRoll < critChance) {
+        isCrit = true;
+        points = Math.floor(points * 2.5);
+      }
+      state.score += points;
+      state.totalPops++;
+
+      // level up
+      const needed = levelReq(state.level);
+      if (state.totalPops >= needed) {
+        state.level++;
+        showLevelUp(state.level);
+        playChime();
+      }
+
+      // sound
+      const pitch = 1200 - size * 3 + Math.random() * 200;
+      playPop(Math.max(300, pitch), isCrit ? 0.2 : 0.12);
+      if (isCrit) setTimeout(() => playPop(Math.max(300, pitch + 300), 0.15), 80);
+
+      // particles
+      const num = isCrit ? 16 : 8;
+      spawnParticles(el, num);
+
+      // float score
+      showFloatScore(el, points, isCrit);
+
+      // animate pop
+      el.classList.add('popping');
+      setTimeout(() => { if (el.parentNode) el.remove(); }, 350);
+      state.bubbles.splice(idx, 1);
+
+      // backend sync
+      completeTodo(id);
+      deleteTodoBackend(id);
+
+      updateUI();
+      checkAchievements();
+      checkEmptyState();
+    }
+
+    function levelReq(lvl) {
+      return Math.floor(5 * Math.pow(lvl, 1.6));
+    }
+
+    function spawnParticles(el, count) {
+      const rect = el.getBoundingClientRect();
+      const area = gameArea.getBoundingClientRect();
+      const cx = rect.left - area.left + rect.width / 2;
+      const cy = rect.top - area.top + rect.height / 2;
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const sz = 3 + Math.random() * 6;
+        const hue = Math.random() * 360;
+        p.style.cssText = `
+          left: ${cx}px; top: ${cy}px;
+          width: ${sz}px; height: ${sz}px;
+          background: hsl(${hue}, 80%, 65%);
+        `;
+        gameArea.appendChild(p);
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 40 + Math.random() * 80;
+        const dx = Math.cos(angle) * speed;
+        const dy = Math.sin(angle) * speed;
+        p.animate([
+          { transform: 'translate(0,0) scale(1)', opacity: 1 },
+          { transform: `translate(${dx}px, ${dy}px) scale(0)`, opacity: 0 }
+        ], { duration: 500 + Math.random() * 300, easing: 'ease-out', fill: 'forwards' });
+        setTimeout(() => p.remove(), 900);
+      }
+    }
+
+    function showFloatScore(el, points, crit) {
+      const rect = el.getBoundingClientRect();
+      const area = gameArea.getBoundingClientRect();
+      const fs = document.createElement('div');
+      fs.className = 'float-score';
+      fs.textContent = (crit ? 'CRIT ' : '+') + points;
+      if (crit) fs.style.color = '#ff5555';
+      fs.style.left = (rect.left - area.left + rect.width / 2 - 20) + 'px';
+      fs.style.top = (rect.top - area.top) + 'px';
+      gameArea.appendChild(fs);
+      setTimeout(() => fs.remove(), 1000);
+    }
+
+    function showLevelUp(lvl) {
+      levelTitle.textContent = `Level ${lvl}`;
+      levelSub.textContent = `${state.totalPops} bubbles popped total`;
+      levelOverlay.classList.add('show');
+      setTimeout(() => levelOverlay.classList.remove('show'), 2000);
+    }
+
+    function checkEmptyState() {
+      if (state.bubbles.length === 0) gameArea.classList.add('empty');
+      else gameArea.classList.remove('empty');
+    }
+
+    function updateUI() {
+      scoreDisplay.textContent = state.score.toLocaleString();
+      levelDisplay.textContent = state.level;
+      recalcCosts();
+      renderShop();
+    }
+
+    function updateComboUI() {
+      if (state.combo > 1) {
+        comboWrap.classList.add('active');
+        comboText.textContent = `${state.combo}x Combo!`;
+        const pct = Math.max(0, (state.comboTimer / (state.comboMaxTime + state.upgrades.comboTime.level * 400)) * 100);
+        comboBar.style.width = pct + '%';
+      } else {
+        comboWrap.classList.remove('active');
+      }
+    }
+
+    function showToast(emoji, text) {
+      toastEmoji.textContent = emoji;
+      toastText.textContent = text;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    /* ========== COMBO LOOP ========== */
+    let lastComboTime = Date.now();
+    function comboLoop() {
+      if (state.combo > 0) {
+        const now = Date.now();
+        const dt = now - lastComboTime;
+        lastComboTime = now;
+        state.comboTimer -= dt;
+        if (state.comboTimer <= 0) {
+          state.combo = 0;
+          comboWrap.classList.remove('active');
+        } else {
+          updateComboUI();
+        }
+      } else {
+        lastComboTime = Date.now();
+      }
+      requestAnimationFrame(comboLoop);
+    }
+    requestAnimationFrame(comboLoop);
+
+    /* ========== UPGRADES / SHOP ========== */
+    const upgradeEffects = {
+      popPower: (lvl) => `${10 + lvl * 5} pts/pop`,
+      autoPop: (lvl) => `${(lvl * 0.5).toFixed(1)}/sec auto`,
+      spawnRate: (lvl) => `${Math.max(0.5, 8 - lvl * 1.2).toFixed(1)}s spawn`,
+      comboTime: (lvl) => `${(2 + lvl * 0.4).toFixed(1)}s max combo`,
+      bigBubbles: (lvl) => `+${lvl * 8}px size`,
+      critChance: (lvl) => `${(lvl * 8)}% crit`,
+    };
+
+    function renderShop() {
+      shopList.innerHTML = '';
+      for (const key in state.upgrades) {
+        const u = state.upgrades[key];
+        const cost = costs[key];
+        const canAfford = state.score >= cost;
+        const el = document.createElement('div');
+        el.className = 'shop-item';
+        el.innerHTML = `
+          <div class="shop-icon">${u.icon}</div>
+          <div class="shop-info">
+            <div class="shop-name">${u.name}</div>
+            <div class="shop-desc">${u.desc}</div>
+            <div class="shop-level">Lvl ${u.level} &middot; ${upgradeEffects[key](u.level)}</div>
+          </div>
+          <div class="shop-action">
+            <button class="shop-btn" data-key="${key}" ${canAfford ? '' : 'disabled'}>
+              ${canAfford ? 'Buy' : 'N/A'}
+            </button>
+            <div class="shop-cost">🪙 ${cost.toLocaleString()}</div>
+          </div>
+        `;
+        shopList.appendChild(el);
+      }
+      shopList.querySelectorAll('.shop-btn').forEach(btn => {
+        btn.addEventListener('click', () => buyUpgrade(btn.dataset.key));
+      });
+    }
+
+    function buyUpgrade(key) {
+      const cost = costs[key];
+      if (state.score < cost) { playError(); return; }
+      state.score -= cost;
+      state.upgrades[key].level++;
+      recalcCosts();
+      updateUI();
+      playChime();
+      showToast('🛒', `${state.upgrades[key].name} upgraded to Lvl ${state.upgrades[key].level}`);
+    }
+
+    function toggleShop() {
+      const open = shopPanel.classList.contains('open');
+      if (open) {
+        shopPanel.classList.remove('open');
+        shopOverlay.classList.remove('open');
+      } else {
+        renderShop();
+        shopPanel.classList.add('open');
+        shopOverlay.classList.add('open');
+      }
+    }
+
+    /* ========== AUTO SYSTEMS ========== */
+    let lastAutoPop = Date.now();
+    let lastAutoSpawn = Date.now();
+    function autoLoop() {
+      const now = Date.now();
+      const autoPop = state.upgrades.autoPop.level;
+      if (autoPop > 0) {
+        const interval = 1000 / (autoPop * 0.5);
+        if (now - lastAutoPop > interval && state.bubbles.length > 0) {
+          lastAutoPop = now;
+          const b = state.bubbles[Math.floor(Math.random() * state.bubbles.length)];
+          if (b) popBubble(b.id);
+        }
+      }
+      const spawnLvl = state.upgrades.spawnRate.level;
+      const spawnInterval = Math.max(500, 8000 - spawnLvl * 1200);
+      if (spawnLvl > 0 && now - lastAutoSpawn > spawnInterval && state.bubbles.length < 20) {
+        lastAutoSpawn = now;
+        spawnBubble();
+      }
+      requestAnimationFrame(autoLoop);
+    }
+    requestAnimationFrame(autoLoop);
+
+    /* ========== ACHIEVEMENTS ========== */
+    function checkAchievements() {
+      const a = state.achievements;
+      const unlock = (id, emoji, text) => {
+        if (!a.has(id)) { a.add(id); showToast(emoji, text); playChime(); }
+      };
+      if (state.totalPops >= 1) unlock('firstPop', '🫧', 'First pop!');
+      if (state.totalPops >= 10) unlock('tenPop', '🫧🫧', '10 bubbles popped!');
+      if (state.totalPops >= 50) unlock('fiftyPop', '🫧🫧🫧', '50 bubbles popped!');
+      if (state.totalPops >= 100) unlock('century', '💯', '100 bubbles popped!');
+      if (state.combo >= 5) unlock('combo5', '🔥', '5x combo!');
+      if (state.combo >= 10) unlock('combo10', '🔥🔥', '10x combo!');
+      if (state.upgrades.popPower.level >= 5) unlock('strong', '💪', 'Pop Power Level 5!');
+      if (state.upgrades.autoPop.level >= 3) unlock('lazy', '⚡', 'Auto Popper Level 3!');
+      if (state.score >= 1000) unlock('rich', '🪙', '1,000 coins!');
+      if (state.score >= 10000) unlock('wealthy', '💰', '10,000 coins!');
+      if (state.level >= 5) unlock('veteran', '⭐', 'Reached Level 5!');
+    }
+
+    /* ========== INPUT ========== */
+    addBtn.addEventListener('click', () => {
+      const text = todoInput.value.trim();
+      spawnBubble(text);
+      todoInput.value = '';
+      todoInput.focus();
+      ensureAudio();
+    });
+    todoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addBtn.click(); });
+
+    shopBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleShop(); });
+    shopClose.addEventListener('click', toggleShop);
+    shopOverlay.addEventListener('click', toggleShop);
+
+    muteBtn.addEventListener('click', () => {
+      muted = !muted;
+      muteBtn.textContent = muted ? '🔇' : '🔊';
+      if (!muted) ensureAudio();
     });
 
-    addBtn.addEventListener('click', addTodo);
-
-    filters.addEventListener('click', (e) => {
-      if (e.target.classList.contains('filter-badge')) {
-        $$('.filter-badge').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        currentFilter = e.target.dataset.filter;
-        render();
-      }
+    /* ========== RESIZE ========== */
+    window.addEventListener('resize', () => {
+      state.bubbles.forEach(b => {
+        const el = b.el;
+        const w = gameArea.clientWidth;
+        const h = gameArea.clientHeight;
+        const x = parseFloat(el.style.left || 0);
+        const y = parseFloat(el.style.top || 0);
+        if (x > w - 40) el.style.left = Math.max(10, w - 80) + 'px';
+        if (y > h - 40) el.style.top = Math.max(10, h - 80) + 'px';
+      });
     });
 
-    fetchTodos();
+    /* ========== INIT ========== */
+    updateUI();
+    checkEmptyState();
+
+    // load existing todos from server as bubbles
+    async function loadTodos() {
+      try {
+        const res = await fetch('/api/todos');
+        const todos = await res.json();
+        todos.forEach(t => {
+          if (!t.completed) spawnBubble(t.text);
+          state.todoCounter = Math.max(state.todoCounter, t.id + 1);
+        });
+      } catch (e) { /* start fresh offline */ }
+    }
+    loadTodos();
   </script>
 </body>
 </html>

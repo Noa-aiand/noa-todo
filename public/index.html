@@ -547,7 +547,6 @@
       todoCounter: 1,
       upgrades: {
         popPower: { level: 0, baseCost: 50, name: 'Pop Power', desc: 'More points per pop', icon: '💪' },
-        autoPop: { level: 0, baseCost: 150, name: 'Auto Popper', desc: 'Auto-pops a bubble/sec', icon: '⚡' },
         spawnRate: { level: 0, baseCost: 200, name: 'Bubble Stream', desc: 'Auto-spawns bubbles faster', icon: '🌊' },
         comboTime: { level: 0, baseCost: 300, name: 'Combo Master', desc: 'Combo lasts longer', icon: '🔥' },
         bigBubbles: { level: 0, baseCost: 500, name: 'Big Bubbles', desc: 'Bigger bubbles = more points', icon: '🎈' },
@@ -844,7 +843,6 @@
     /* ========== UPGRADES / SHOP ========== */
     const upgradeEffects = {
       popPower: (lvl) => `${10 + lvl * 5} pts/pop`,
-      autoPop: (lvl) => `${(lvl * 0.5).toFixed(1)}/sec auto`,
       spawnRate: (lvl) => `${Math.max(0.5, 8 - lvl * 1.2).toFixed(1)}s spawn`,
       comboTime: (lvl) => `${(2 + lvl * 0.4).toFixed(1)}s max combo`,
       bigBubbles: (lvl) => `+${lvl * 8}px size`,
@@ -904,19 +902,9 @@
     }
 
     /* ========== AUTO SYSTEMS ========== */
-    let lastAutoPop = Date.now();
     let lastAutoSpawn = Date.now();
     function autoLoop() {
       const now = Date.now();
-      const autoPop = state.upgrades.autoPop.level;
-      if (autoPop > 0) {
-        const interval = 1000 / (autoPop * 0.5);
-        if (now - lastAutoPop > interval && state.bubbles.length > 0) {
-          lastAutoPop = now;
-          const b = state.bubbles[Math.floor(Math.random() * state.bubbles.length)];
-          if (b) popBubble(b.id);
-        }
-      }
       const spawnLvl = state.upgrades.spawnRate.level;
       const spawnInterval = Math.max(500, 8000 - spawnLvl * 1200);
       if (spawnLvl > 0 && now - lastAutoSpawn > spawnInterval && state.bubbles.length < 20) {
@@ -940,7 +928,6 @@
       if (state.combo >= 5) unlock('combo5', '🔥', '5x combo!');
       if (state.combo >= 10) unlock('combo10', '🔥🔥', '10x combo!');
       if (state.upgrades.popPower.level >= 5) unlock('strong', '💪', 'Pop Power Level 5!');
-      if (state.upgrades.autoPop.level >= 3) unlock('lazy', '⚡', 'Auto Popper Level 3!');
       if (state.score >= 1000) unlock('rich', '🪙', '1,000 coins!');
       if (state.score >= 10000) unlock('wealthy', '💰', '10,000 coins!');
       if (state.level >= 5) unlock('veteran', '⭐', 'Reached Level 5!');
